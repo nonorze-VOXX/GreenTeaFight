@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37f887090de45e83aad3dd2c5c7546c2, type: 3}
   m_Name: PlayerData
   m_EditorClassIdentifier: 
+  xMax: 7
+  xMin: -7
   MoveSpeed: 5
   JumpSpeed: 10
   DashFrameMoveTimes: 10
   DashCd: 0
   DashBackTime: 5
-  QueueTime: 10.001114
+  QueueTime: 10.012839
   PlayerDamege: 10
+  EnemyHP: 100

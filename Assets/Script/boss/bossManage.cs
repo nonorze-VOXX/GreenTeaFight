@@ -15,13 +15,16 @@ public class bossManage : MonoBehaviour
     private bool TouchGround;
     private bool leftDir;
     public PlayerData data;
+
     enum bossState
     {
         Idle = 0,
         Walk = 1,
         Slash = 2
     }
+
     bossState nowBossState;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -30,6 +33,7 @@ public class bossManage : MonoBehaviour
         playerT = player.GetComponent<Transform>();
         bossT = this.gameObject.transform;
     }
+
     // Update is called once per frame
     void Update()
     {
@@ -50,17 +54,18 @@ public class bossManage : MonoBehaviour
                     Move();
                 break;
             case bossState.Slash:
-                if(bossAnimator.GetCurrentAnimatorStateInfo(0).IsName("bossActiveEnd"))
+                if (bossAnimator.GetCurrentAnimatorStateInfo(0).IsName("bossActiveEnd"))
                     nowBossState = bossState.Walk;
                 break;
         }
     }
+
     private void NewGame()
     {
         nowBossState = bossState.Idle;
         leftDir = true;
         TouchGround = false;
-        data.EnemyHP = 100;
+        data.enemyHp = 100;
     }
 
     private void Move()
@@ -72,6 +77,7 @@ public class bossManage : MonoBehaviour
                 leftDir = true;
                 bossT.Rotate(0, 180, 0);
             }
+
             if (bossT.position.x - playerT.position.x > distance)
                 bossT.Translate(new Vector2(-speed, 0));
             else
@@ -84,21 +90,24 @@ public class bossManage : MonoBehaviour
                 leftDir = false;
                 bossT.Rotate(0, 180, 0);
             }
+
             if (playerT.position.x - bossT.position.x > distance)
                 bossT.Translate(new Vector2(-speed, 0));
             else
                 nowBossState = bossState.Slash;
         }
     }
+
     public void OnCollisionStay2D(Collision2D collision)
     {
         if (collision.gameObject.tag == "ground")
         {
             TouchGround = true;
         }
-    } 
+    }
+
     public void OnCollisionEnter2D(Collision2D collision)
     {
         Debug.Log(collision.gameObject.tag);
-    } 
+    }
 }
