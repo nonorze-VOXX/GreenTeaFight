@@ -12,13 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37f887090de45e83aad3dd2c5c7546c2, type: 3}
   m_Name: PlayerData
   m_EditorClassIdentifier: 
-  xMax: 7
-  xMin: -7
-  MoveSpeed: 5
-  JumpSpeed: 10
-  DashFrameMoveTimes: 10
-  DashCd: 0
-  DashBackTime: 5
-  QueueTime: 10.012839
-  PlayerDamege: 10
-  EnemyHP: 100
+  xMax: 8
+  moveSpeed: 10
+  jumpSpeed: 10
+  dashFrameMoveTimes: 1
+  dashBackTime: 1
+  queueTime: 0
+  playerDamege: 1
+  canMove: 1
+  canDash: 1
+  canAttack: 1
+  enemyHp: 100
+  dash:
+    stateCd: 3
+    stateCdCounter: 0
+    stateKeeptime: 0
+    stateKeeptimeCounter: 0
+  attack:
+    stateCd: 1
+    stateCdCounter: 0.02
+    stateKeeptime: 0
+    stateKeeptimeCounter: 0

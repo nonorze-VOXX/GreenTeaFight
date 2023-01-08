@@ -27,6 +27,8 @@ public class PlayerData : ScriptableObject
     public bool canMove;
     public bool canDash;
     public bool canAttack;
+    public bool dashing;
+    public Vector2 unitDash;
 
     public int enemyHp;
     public stateData dash;

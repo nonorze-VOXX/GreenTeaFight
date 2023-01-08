@@ -17,6 +17,7 @@ namespace Script.Player.stateMechine
         public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo,
             int layerIndex)
         {
+            animator.SetInteger("State", (int)PlayerManager.PlayerState.Idle);
         }
 
         public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo,

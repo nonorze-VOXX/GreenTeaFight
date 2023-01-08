@@ -1,11 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using Script.Player.stateMechine;
 using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerManager : MonoBehaviour
 {
-    enum PlayerState
+    public enum PlayerState
     {
         Idle = 0,
         Walk = 1,
@@ -13,8 +15,6 @@ public class PlayerManager : MonoBehaviour
         Attack = 3,
         Dash = 4
     }
-
-    PlayerState nowPlayerState = PlayerState.Idle;
 
     //public PlayerAttack attack;
     private Rigidbody2D Rigidbody;
@@ -44,21 +44,34 @@ public class PlayerManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        PastPlayerQueueUpdate();
+
         if (data.canMove)
         {
             GetMove();
-            if (data.canDash)
-            {
-                GetDash();
-            }
-
-            if (data.canAttack)
-            {
-                GetAttack();
-            }
         }
 
         CounterUpdate();
+    }
+
+    private void PastPlayerQueueUpdate()
+    {
+        if (data.queueTime < data.dashBackTime * 2) //- data.dashCd)
+        {
+            data.queueTime += Time.deltaTime;
+            data.pastLocal.Enqueue(new Vector2(
+                transform.position.x,
+                transform.position.y
+            ));
+        }
+        else
+        {
+            data.pastLocal.Enqueue(new Vector2(
+                transform.position.x,
+                transform.position.y
+            ));
+            PastPlayer.transform.position = data.pastLocal.Dequeue();
+        }
     }
 
     private void CounterUpdate()
@@ -68,6 +81,7 @@ public class PlayerManager : MonoBehaviour
             data.attack.stateCdCounter += Time.deltaTime;
             if (data.attack.stateCdCounter > data.attack.stateCd)
             {
+                data.attack.stateCdCounter = 0;
                 data.canAttack = true;
             }
         }
@@ -82,14 +96,12 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
-    private void GetAttack()
-    {
-    }
 
     private void GetDash()
     {
         if (Input.GetKey("k"))
         {
+            data.canDash = false;
             UnitDash = (data.pastLocal.Dequeue() - (Vector2)transform.position) / data.dashFrameMoveTimes;
         }
     }
@@ -140,7 +152,6 @@ public class PlayerManager : MonoBehaviour
         data.pastLocal.Clear();
         data.queueTime = 0;
         _touchGround = false;
-        nowPlayerState = PlayerState.Idle;
         attacked = false;
     }
 
