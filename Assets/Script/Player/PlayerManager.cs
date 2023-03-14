@@ -1,180 +1,148 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using Script.Player.stateMechine;
-using Unity.VisualScripting;
+using System;
 using UnityEngine;
 
-public class PlayerManager : MonoBehaviour
+namespace Script.Player
 {
     public enum PlayerState
     {
         Idle = 0,
         Walk = 1,
         Run = 2,
-        Attack = 3,
-        Dash = 4
+        Dash = 3,
+        DashAttack,
+        FallingDownAttack,
+        Attack,
+        Jumping,
+        Falling,
     }
 
-    //public PlayerAttack attack;
-    private Rigidbody2D Rigidbody;
-    private Vector2 UnitDash;
-    public GameObject PastPlayer;
-    private bool _touchGround;
-
-    public PlayerData data;
-
-    //public GameObject attack;
-    public bool attacked;
-
-    public Animator playerAction;
-
-    // Start is called before the first frame update
-    void Start()
+    public class PlayerManager : MonoBehaviour
     {
-        Rigidbody = gameObject.GetComponent<Rigidbody2D>();
-        playerAction = gameObject.GetComponent<Animator>();
-        NewGame();
-        data.pastLocal.Enqueue(new Vector2(
-            transform.position.x,
-            transform.position.y
-        ));
-    }
+        private PlayerState state;
+        public PlayerData playerData;
+        private Rigidbody2D _rigidbody2D;
 
-    // Update is called once per frame
-    void Update()
-    {
-        PastPlayerQueueUpdate();
 
-        if (data.canMove)
+        public GameObject PastPlayer;
+
+        private float nowSpeed;
+
+        private void Start()
         {
-            GetMove();
+            _rigidbody2D = GetComponent<Rigidbody2D>();
+
+            //tmp
+            nowSpeed = 10;
+            //todo newgame init
         }
 
-        CounterUpdate();
-    }
 
-    private void PastPlayerQueueUpdate()
-    {
-        if (data.queueTime < data.dashBackTime * 2) //- data.dashCd)
+        private void Update()
         {
-            data.queueTime += Time.deltaTime;
-            data.pastLocal.Enqueue(new Vector2(
-                transform.position.x,
-                transform.position.y
-            ));
-        }
-        else
-        {
-            data.pastLocal.Enqueue(new Vector2(
-                transform.position.x,
-                transform.position.y
-            ));
-            PastPlayer.transform.position = data.pastLocal.Dequeue();
-        }
-    }
-
-    private void CounterUpdate()
-    {
-        if (!data.canAttack)
-        {
-            data.attack.stateCdCounter += Time.deltaTime;
-            if (data.attack.stateCdCounter > data.attack.stateCd)
+            switch (state)
             {
-                data.attack.stateCdCounter = 0;
-                data.canAttack = true;
+                case PlayerState.Idle:
+                    MoveManager();
+                    break;
+                case PlayerState.Walk:
+                    break;
+                case PlayerState.Run:
+                    break;
+                case PlayerState.Dash:
+                    break;
+                case PlayerState.DashAttack:
+                    break;
+                case PlayerState.FallingDownAttack:
+                    break;
+                case PlayerState.Attack:
+                    break;
+                case PlayerState.Jumping:
+                    break;
+                case PlayerState.Falling:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
-        if (!data.canDash)
+
+        private void MoveManager()
         {
-            data.dash.stateCdCounter += Time.deltaTime;
-            if (data.dash.stateCdCounter > data.dash.stateCd)
+            _rigidbody2D.velocity = HorizontalMoveManager();
+            JumpManager();
+        }
+
+        private void JumpManager()
+        {
+            switch (playerData.stateCheck.Jump)
             {
-                data.canDash = true;
+                case true:
+                {
+                    var jumpData = playerData.jumpData;
+                    if (GetJumptKey())
+                    {
+                        if (jumpData.nowForceTime > jumpData.maxForceTime)
+                        {
+                            JumpEnd();
+                        }
+                        else
+                        {
+                            playerData.jumpData.nowForceTime += Time.deltaTime;
+                        }
+                    }
+                    else if (!GetJumptKey() && playerData.jumpData.nowForceTime != 0)
+                    {
+                        JumpEnd();
+                    }
+
+                    break;
+                }
+                case false when playerData.jumpData.CdCounter > playerData.jumpData.Cd:
+                    playerData.stateCheck.Jump = true;
+                    break;
+                case false:
+                    playerData.jumpData.CdCounter += Time.deltaTime;
+                    break;
             }
         }
-    }
 
-
-    private void GetDash()
-    {
-        if (Input.GetKey("k"))
+        private void JumpEnd()
         {
-            data.canDash = false;
-            UnitDash = (data.pastLocal.Dequeue() - (Vector2)transform.position) / data.dashFrameMoveTimes;
-        }
-    }
-
-    private void GetMove()
-    {
-        if (Input.GetKey("d") && Input.GetKey("a"))
-        {
-            Move(0.0f, Rigidbody.velocity.y);
-        }
-        else if (Input.GetKey("d") && transform.position.x < data.xMax)
-        {
-            Move(data.moveSpeed, Rigidbody.velocity.y);
-            transform.rotation = Quaternion.Euler(0, 180, 0);
-        }
-        else if (Input.GetKey("a") && transform.position.x > -data.xMax)
-        {
-            transform.rotation = Quaternion.Euler(0, 0, 0);
-            Move(-data.moveSpeed, Rigidbody.velocity.y);
-        }
-        else
-        {
-            Move(0.0f, Rigidbody.velocity.y);
+            playerData.jumpData.nowForceTime = 0;
+            playerData.stateCheck.Jump = false;
         }
 
-        // will do keep a time and  no work
-        if (Input.GetKey("w") && _touchGround)
+        private bool GetJumptKey()
         {
-            Move(Rigidbody.velocity.x, data.jumpSpeed);
-            _touchGround = false;
+            return Input.GetKey(KeyCode.Space);
         }
-    }
 
-    private void Move(Vector2 unitMove)
-    {
-        transform.position = (Vector2)transform.position + unitMove;
-    }
-
-    private void Move(float x, float y)
-    {
-        Rigidbody.velocity = new Vector2(x, y);
-        //
-    }
-
-    public void NewGame()
-    {
-        gameObject.transform.Translate(0.0f, 0.0f, 0.0f);
-        data.pastLocal.Clear();
-        data.queueTime = 0;
-        _touchGround = false;
-        attacked = false;
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        Debug.Log(collision.gameObject.tag);
-        if (attacked == false
-            && collision.gameObject.CompareTag("enemy")
-            && collision.gameObject.transform.rotation == this.transform.rotation)
+        private Vector2 HorizontalMoveManager()
         {
-            data.enemyHp -= data.playerDamege;
-            attacked = true;
-            if (data.enemyHp <= 0)
+            if (GetRightKey() && GetLeftKey())
             {
+                return Vector2.zero;
             }
-        }
-    }
+            else if (GetRightKey())
+            {
+                return new Vector2(nowSpeed, _rigidbody2D.velocity.y);
+            }
+            else if (GetLeftKey())
+            {
+                return new Vector2(-nowSpeed, _rigidbody2D.velocity.y);
+            }
 
-    public void OnCollisionStay2D(Collision2D collision)
-    {
-        if (collision.gameObject.tag == "ground")
+            return new Vector2(0, _rigidbody2D.velocity.y);
+        }
+
+        private bool GetLeftKey()
         {
-            _touchGround = true;
+            return Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow);
+        }
+
+        private bool GetRightKey()
+        {
+            return Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
         }
     }
 }

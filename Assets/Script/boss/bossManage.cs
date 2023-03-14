@@ -17,6 +17,7 @@ public class bossManage : MonoBehaviour
     private bool leftDir;
     private int AttackLoopNum = 2;
     public PlayerData data;
+
     enum bossState
     {
         Idle = 0,
@@ -25,7 +26,9 @@ public class bossManage : MonoBehaviour
         Stab = 3,
         Charge = 4
     }
+
     bossState nowBossState;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -34,6 +37,7 @@ public class bossManage : MonoBehaviour
         playerT = player.GetComponent<Transform>();
         bossT = this.gameObject.transform;
     }
+
     // Update is called once per frame
     void Update()
     {
@@ -54,7 +58,7 @@ public class bossManage : MonoBehaviour
                     Move();
                 break;
             case bossState.Slash:
-                if(bossAnimator.GetCurrentAnimatorStateInfo(0).IsName("bossActiveEnd"))
+                if (bossAnimator.GetCurrentAnimatorStateInfo(0).IsName("bossActiveEnd"))
                     nowBossState = bossState.Walk;
                 break;
             case bossState.Stab:
@@ -69,12 +73,13 @@ public class bossManage : MonoBehaviour
                 break;
         }
     }
+
     private void NewGame()
     {
         nowBossState = bossState.Idle;
         leftDir = true;
         TouchGround = false;
-        data.EnemyHP = 100;
+        // data.EnemyHP = 100;
     }
 
     private void Move()
@@ -86,6 +91,7 @@ public class bossManage : MonoBehaviour
                 leftDir = true;
                 bossT.Rotate(0, 180, 0);
             }
+
             if (AttackLoopNum == 4)
                 AttackLoop();
             else if (bossT.position.x - playerT.position.x > distance)
@@ -100,7 +106,8 @@ public class bossManage : MonoBehaviour
                 leftDir = false;
                 bossT.Rotate(0, 180, 0);
             }
-            if(AttackLoopNum == 4)
+
+            if (AttackLoopNum == 4)
                 AttackLoop();
             else if (playerT.position.x - bossT.position.x > distance)
                 bossT.Translate(new Vector2(-speed, 0));
@@ -108,17 +115,18 @@ public class bossManage : MonoBehaviour
                 AttackLoop();
         }
     }
+
     private void ChargeMove()
     {
-
         if (bossT.position.x > playerT.position.x)
             bossT.Translate(new Vector2(-chargeSpeed, 0));
         else
             bossT.Translate(new Vector2(-chargeSpeed, 0));
     }
+
     private void AttackLoop()
     {
-        if(AttackLoopNum == 2)
+        if (AttackLoopNum == 2)
         {
             nowBossState = bossState.Slash;
             AttackLoopNum = 3;
@@ -133,17 +141,18 @@ public class bossManage : MonoBehaviour
             nowBossState = bossState.Charge;
             AttackLoopNum = 2;
         }
-
     }
+
     public void OnCollisionStay2D(Collision2D collision)
     {
         if (collision.gameObject.tag == "ground")
         {
             TouchGround = true;
         }
-    } 
+    }
+
     public void OnCollisionEnter2D(Collision2D collision)
     {
         Debug.Log(collision.gameObject.tag);
-    } 
+    }
 }
