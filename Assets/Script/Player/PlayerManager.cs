@@ -1,4 +1,5 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Script.Player
@@ -21,6 +22,7 @@ namespace Script.Player
         private PlayerState state;
         public PlayerData playerData;
         private Rigidbody2D _rigidbody2D;
+        private bool onGround;
 
 
         public GameObject PastPlayer;
@@ -79,7 +81,7 @@ namespace Script.Player
                 case true:
                 {
                     var jumpData = playerData.jumpData;
-                    if (GetJumptKey())
+                    if (GetJumptKey() && onGround)
                     {
                         if (jumpData.nowForceTime > jumpData.maxForceTime)
                         {
@@ -88,6 +90,7 @@ namespace Script.Player
                         else
                         {
                             playerData.jumpData.nowForceTime += Time.deltaTime;
+                            _rigidbody2D.velocity += Vector2.up;
                         }
                     }
                     else if (!GetJumptKey() && playerData.jumpData.nowForceTime != 0)
@@ -99,6 +102,7 @@ namespace Script.Player
                 }
                 case false when playerData.jumpData.CdCounter > playerData.jumpData.Cd:
                     playerData.stateCheck.Jump = true;
+                    playerData.jumpData.CdCounter = 0;
                     break;
                 case false:
                     playerData.jumpData.CdCounter += Time.deltaTime;
@@ -110,6 +114,7 @@ namespace Script.Player
         {
             playerData.jumpData.nowForceTime = 0;
             playerData.stateCheck.Jump = false;
+            onGround = false;
         }
 
         private bool GetJumptKey()
@@ -143,6 +148,11 @@ namespace Script.Player
         private bool GetRightKey()
         {
             return Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
+        }
+
+        private void OnCollisionEnter2D(Collision2D other)
+        {
+            onGround = other.transform.CompareTag("ground") || onGround;
         }
     }
 }

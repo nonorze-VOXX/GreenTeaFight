@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace Script.Player
 {
+    [System.Serializable]
     public struct JumpData
     {
         public float maxForceTime;
@@ -10,11 +11,13 @@ namespace Script.Player
         public float CdCounter;
     }
 
+    [System.Serializable]
     public struct MoveData
     {
         public float speed;
     }
 
+    [System.Serializable]
     public struct StateCheck
     {
         public bool Jump;
@@ -27,7 +30,8 @@ namespace Script.Player
         public bool Jumping;
     }
 
-    [CreateAssetMenu(fileName = "playerData", menuName = "playerData", order = 0)]
+    [CreateAssetMenu(fileName = "PlayerData", menuName = "ScriptableObjects/PlayerData", order = 1)]
+    [System.Serializable]
     public class PlayerData : ScriptableObject
     {
         public MoveData moveData;
