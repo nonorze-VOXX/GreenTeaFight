@@ -6,6 +6,7 @@ using UnityEngine;
 public class bossManage : MonoBehaviour
 {
     public float speed;
+    public float chargeSpeed;
     public float distance;
     public GameObject player;
 
@@ -14,17 +15,17 @@ public class bossManage : MonoBehaviour
     private Transform bossT;
     private bool TouchGround;
     private bool leftDir;
+    private int AttackLoopNum = 2;
     public PlayerData data;
-
     enum bossState
     {
         Idle = 0,
         Walk = 1,
-        Slash = 2
+        Slash = 2,
+        Stab = 3,
+        Charge = 4
     }
-
     bossState nowBossState;
-
     // Start is called before the first frame update
     void Start()
     {
@@ -33,7 +34,6 @@ public class bossManage : MonoBehaviour
         playerT = player.GetComponent<Transform>();
         bossT = this.gameObject.transform;
     }
-
     // Update is called once per frame
     void Update()
     {
@@ -54,18 +54,27 @@ public class bossManage : MonoBehaviour
                     Move();
                 break;
             case bossState.Slash:
+                if(bossAnimator.GetCurrentAnimatorStateInfo(0).IsName("bossActiveEnd"))
+                    nowBossState = bossState.Walk;
+                break;
+            case bossState.Stab:
+                if (bossAnimator.GetCurrentAnimatorStateInfo(0).IsName("bossActiveEnd"))
+                    nowBossState = bossState.Walk;
+                break;
+            case bossState.Charge:
+                if (bossAnimator.GetCurrentAnimatorStateInfo(0).IsName("bossCharge2"))
+                    ChargeMove();
                 if (bossAnimator.GetCurrentAnimatorStateInfo(0).IsName("bossActiveEnd"))
                     nowBossState = bossState.Walk;
                 break;
         }
     }
-
     private void NewGame()
     {
         nowBossState = bossState.Idle;
         leftDir = true;
         TouchGround = false;
-        data.enemyHp = 100;
+        data.EnemyHP = 100;
     }
 
     private void Move()
@@ -77,11 +86,12 @@ public class bossManage : MonoBehaviour
                 leftDir = true;
                 bossT.Rotate(0, 180, 0);
             }
-
-            if (bossT.position.x - playerT.position.x > distance)
+            if (AttackLoopNum == 4)
+                AttackLoop();
+            else if (bossT.position.x - playerT.position.x > distance)
                 bossT.Translate(new Vector2(-speed, 0));
             else
-                nowBossState = bossState.Slash;
+                AttackLoop();
         }
         else
         {
@@ -90,24 +100,50 @@ public class bossManage : MonoBehaviour
                 leftDir = false;
                 bossT.Rotate(0, 180, 0);
             }
-
-            if (playerT.position.x - bossT.position.x > distance)
+            if(AttackLoopNum == 4)
+                AttackLoop();
+            else if (playerT.position.x - bossT.position.x > distance)
                 bossT.Translate(new Vector2(-speed, 0));
             else
-                nowBossState = bossState.Slash;
+                AttackLoop();
         }
     }
+    private void ChargeMove()
+    {
 
+        if (bossT.position.x > playerT.position.x)
+            bossT.Translate(new Vector2(-chargeSpeed, 0));
+        else
+            bossT.Translate(new Vector2(-chargeSpeed, 0));
+    }
+    private void AttackLoop()
+    {
+        if(AttackLoopNum == 2)
+        {
+            nowBossState = bossState.Slash;
+            AttackLoopNum = 3;
+        }
+        else if (AttackLoopNum == 3)
+        {
+            nowBossState = bossState.Stab;
+            AttackLoopNum = 4;
+        }
+        else if (AttackLoopNum == 4)
+        {
+            nowBossState = bossState.Charge;
+            AttackLoopNum = 2;
+        }
+
+    }
     public void OnCollisionStay2D(Collision2D collision)
     {
         if (collision.gameObject.tag == "ground")
         {
             TouchGround = true;
         }
-    }
-
+    } 
     public void OnCollisionEnter2D(Collision2D collision)
     {
         Debug.Log(collision.gameObject.tag);
-    }
+    } 
 }
