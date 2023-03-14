@@ -23,6 +23,8 @@ namespace Script.Player
         public PlayerData playerData;
         private Rigidbody2D _rigidbody2D;
         private bool onGround;
+        private Vector2 deltaDash;
+        private Vector2 dashTarget;
 
 
         public GameObject PastPlayer;
@@ -35,6 +37,8 @@ namespace Script.Player
 
             //tmp
             nowSpeed = 10;
+            playerData.dashData.CdCounter = 0;
+            playerData.jumpData.CdCounter = 0;
             //todo newgame init
         }
 
@@ -51,8 +55,16 @@ namespace Script.Player
                 case PlayerState.Run:
                     break;
                 case PlayerState.Dash:
+                    Dash();
+                    if (playerData.dashData.keepCounter > playerData.dashData.maxKeepTime)
+                    {
+                        state = PlayerState.Idle;
+                        _rigidbody2D.gravityScale = 1;
+                    }
+
                     break;
                 case PlayerState.DashAttack:
+
                     break;
                 case PlayerState.FallingDownAttack:
                     break;
@@ -67,11 +79,57 @@ namespace Script.Player
             }
         }
 
+        private void Dash()
+        {
+            playerData.dashData.keepCounter += Time.deltaTime;
+            if (playerData.dashData.keepCounter > playerData.dashData.maxKeepTime)
+            {
+                transform.position = dashTarget;
+            }
+            else
+            {
+                transform.position += (Vector3)(deltaDash * Time.deltaTime);
+            }
+        }
+
 
         private void MoveManager()
         {
             _rigidbody2D.velocity = HorizontalMoveManager();
+            DashTrigger();
             JumpManager();
+        }
+
+        private void DashTrigger()
+        {
+            if (GetDashKey() && playerData.stateCheck.Dash)
+            {
+                dashTarget = PastPlayer.transform.position;
+                deltaDash = (dashTarget - (Vector2)transform.position) / playerData.dashData.maxKeepTime;
+                state = PlayerState.Dash;
+                playerData.stateCheck.Dash = false;
+                _rigidbody2D.gravityScale = 0;
+                _rigidbody2D.velocity = Vector2.zero;
+            }
+            else
+            {
+                if (playerData.dashData.CdCounter > playerData.dashData.Cd)
+                {
+                    playerData.dashData.keepCounter = 0;
+                    playerData.dashData.CdCounter = 0;
+                    playerData.stateCheck.Dash = true;
+                }
+
+                if (!playerData.stateCheck.Dash)
+                {
+                    playerData.dashData.CdCounter += Time.deltaTime;
+                }
+            }
+        }
+
+        private bool GetDashKey()
+        {
+            return Input.GetKey(KeyCode.K);
         }
 
         private void JumpManager()
@@ -119,7 +177,7 @@ namespace Script.Player
 
         private bool GetJumptKey()
         {
-            return Input.GetKey(KeyCode.Space);
+            return Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.W);
         }
 
         private Vector2 HorizontalMoveManager()
