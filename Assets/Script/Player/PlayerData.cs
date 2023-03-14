@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Script.Player
@@ -27,6 +28,14 @@ namespace Script.Player
     }
 
     [System.Serializable]
+    public struct PastPlayerData
+    {
+        public Queue<Vector2> path;
+        public float pathTime;
+        public float maxPathTime;
+    }
+
+    [System.Serializable]
     public struct StateCheck
     {
         public bool Jump;
@@ -39,6 +48,7 @@ namespace Script.Player
         public bool Jumping;
     }
 
+
     [CreateAssetMenu(fileName = "PlayerData", menuName = "ScriptableObjects/PlayerData", order = 1)]
     [System.Serializable]
     public class PlayerData : ScriptableObject
@@ -47,5 +57,6 @@ namespace Script.Player
         public StateCheck stateCheck;
         public JumpData jumpData;
         public DashData dashData;
+        public PastPlayerData pastPlayerData;
     }
 }
