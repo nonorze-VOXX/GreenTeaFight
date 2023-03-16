@@ -48,7 +48,13 @@ namespace Script.Player
             switch (state)
             {
                 case PlayerState.Idle:
-                    MoveManager();
+                    DashTrigger();
+                    JumpManager();
+                    _rigidbody2D.velocity = new Vector2(
+                        GetSpeedByRLKey(),
+                        _rigidbody2D.velocity.y
+                    );
+
                     break;
                 case PlayerState.Walk:
                     break;
@@ -92,14 +98,6 @@ namespace Script.Player
             }
         }
 
-
-        private void MoveManager()
-        {
-            _rigidbody2D.velocity = HorizontalMoveManager();
-            DashTrigger();
-            JumpManager();
-        }
-
         private void DashTrigger()
         {
             if (GetDashKey() && playerData.stateCheck.Dash)
@@ -134,28 +132,24 @@ namespace Script.Player
 
         private void JumpManager()
         {
+            var jumpData = playerData.jumpData;
             switch (playerData.stateCheck.Jump)
             {
-                case true:
+                case true when (GetJumptKey() && onGround) && (jumpData.nowForceTime > jumpData.maxForceTime):
                 {
-                    var jumpData = playerData.jumpData;
-                    if (GetJumptKey() && onGround)
-                    {
-                        if (jumpData.nowForceTime > jumpData.maxForceTime)
-                        {
-                            JumpEnd();
-                        }
-                        else
-                        {
-                            playerData.jumpData.nowForceTime += Time.deltaTime;
-                            _rigidbody2D.velocity += Vector2.up;
-                        }
-                    }
-                    else if (!GetJumptKey() && playerData.jumpData.nowForceTime != 0)
-                    {
-                        JumpEnd();
-                    }
+                    JumpEnd();
+                    break;
+                }
+                case true when (GetJumptKey() && onGround):
+                {
+                    playerData.jumpData.nowForceTime += Time.deltaTime;
+                    _rigidbody2D.velocity += Vector2.up;
 
+                    break;
+                }
+                case true when (!GetJumptKey() && playerData.jumpData.nowForceTime != 0):
+                {
+                    JumpEnd();
                     break;
                 }
                 case false when playerData.jumpData.CdCounter > playerData.jumpData.Cd:
@@ -180,22 +174,22 @@ namespace Script.Player
             return Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.W);
         }
 
-        private Vector2 HorizontalMoveManager()
+        private float GetSpeedByRLKey()
         {
             if (GetRightKey() && GetLeftKey())
             {
-                return Vector2.zero;
+                return 0;
             }
             else if (GetRightKey())
             {
-                return new Vector2(nowSpeed, _rigidbody2D.velocity.y);
+                return nowSpeed;
             }
             else if (GetLeftKey())
             {
-                return new Vector2(-nowSpeed, _rigidbody2D.velocity.y);
+                return -nowSpeed;
             }
 
-            return new Vector2(0, _rigidbody2D.velocity.y);
+            return 0;
         }
 
         private bool GetLeftKey()
