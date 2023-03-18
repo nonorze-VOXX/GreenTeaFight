@@ -133,40 +133,47 @@ namespace Script.Player
         private void JumpManager()
         {
             var jumpData = playerData.jumpData;
-            switch (playerData.stateCheck.Jump)
-            {
-                case true when (GetJumptKey() && onGround) && (jumpData.nowForceTime > jumpData.maxForceTime):
-                {
-                    JumpEnd();
-                    break;
-                }
-                case true when (GetJumptKey() && onGround):
-                {
-                    playerData.jumpData.nowForceTime += Time.deltaTime;
-                    _rigidbody2D.velocity += Vector2.up;
 
-                    break;
-                }
-                case true when (!GetJumptKey() && playerData.jumpData.nowForceTime != 0):
-                {
-                    JumpEnd();
-                    break;
-                }
-                case false when playerData.jumpData.CdCounter > playerData.jumpData.Cd:
-                    playerData.stateCheck.Jump = true;
-                    playerData.jumpData.CdCounter = 0;
-                    break;
-                case false:
-                    playerData.jumpData.CdCounter += Time.deltaTime;
-                    break;
+            var canJump = playerData.stateCheck.Jump;
+            var isPressJump = GetJumptKey();
+            var isForceTimeOverflow = jumpData.nowForceTime > jumpData.maxForceTime;
+            var isJumping = jumpData.nowForceTime != 0;
+            var isColddown = jumpData.CdCounter > jumpData.Cd;
+
+            var isJumpingTimeOverflow = canJump && isPressJump && onGround && isForceTimeOverflow;
+            var isStartJump = canJump && isPressJump && onGround;
+            var isCancel = canJump && !isPressJump && isJumping;
+            var isCooldowning = !canJump && isColddown;
+            var isColddowned = canJump && isColddown;
+
+            if (isJumpingTimeOverflow || isCancel)
+            {
+                // Jump End
+                playerData.jumpData.nowForceTime = 0;
+                playerData.stateCheck.Jump = false;
+                onGround = false;
+                return;
+            }
+            if (isStartJump)
+            {
+                playerData.jumpData.nowForceTime += Time.deltaTime;
+                _rigidbody2D.velocity += Vector2.up;
+                return;
+            }
+            if (isCooldowning)
+            {
+                playerData.stateCheck.Jump = true;
+                playerData.jumpData.CdCounter = 0;
+                return;
+            }
+            if (!canJump)
+            {
+                playerData.jumpData.CdCounter += Time.deltaTime;
             }
         }
 
         private void JumpEnd()
         {
-            playerData.jumpData.nowForceTime = 0;
-            playerData.stateCheck.Jump = false;
-            onGround = false;
         }
 
         private bool GetJumptKey()
