@@ -25,7 +25,7 @@ namespace Script.Player
         private bool onGround;
         private Vector2 deltaDash;
         private Vector2 dashTarget;
-
+        private Animator animator;
 
         public GameObject PastPlayer;
 
@@ -35,6 +35,7 @@ namespace Script.Player
         {
             _rigidbody2D = GetComponent<Rigidbody2D>();
 
+            animator = GetComponent<Animator>();
             //tmp
             nowSpeed = 10;
             playerData.dashData.CdCounter = 0;
@@ -48,12 +49,21 @@ namespace Script.Player
             switch (state)
             {
                 case PlayerState.Idle:
+                    AttackTrigger();
                     DashTrigger();
                     JumpManager();
                     _rigidbody2D.velocity = new Vector2(
                         GetSpeedByRLKey(),
                         _rigidbody2D.velocity.y
                     );
+                    if (_rigidbody2D.velocity.x > 0)
+                    {
+                        transform.rotation = Quaternion.Euler(0, 180, 0);
+                    }
+                    else if (_rigidbody2D.velocity.x < 0)
+                    {
+                        transform.rotation = Quaternion.Euler(0, 0, 0);
+                    }
 
                     break;
                 case PlayerState.Walk:
@@ -75,6 +85,7 @@ namespace Script.Player
                 case PlayerState.FallingDownAttack:
                     break;
                 case PlayerState.Attack:
+                    state = PlayerState.Idle;
                     break;
                 case PlayerState.Jumping:
                     break;
@@ -125,9 +136,36 @@ namespace Script.Player
             }
         }
 
+        void AttackTrigger()
+        {
+            if (GetAttackKey() && playerData.stateCheck.Attack)
+            {
+                animator.SetInteger("State", 1);
+                state = PlayerState.Attack;
+                playerData.stateCheck.Attack = false;
+            }
+            else
+            {
+                if (playerData.attackData.CdCounter > playerData.attackData.Cd)
+                {
+                    playerData.stateCheck.Attack = true;
+                }
+
+                if (!playerData.stateCheck.Attack)
+                {
+                    playerData.attackData.CdCounter += Time.deltaTime;
+                }
+            }
+        }
+
         private bool GetDashKey()
         {
             return Input.GetKey(KeyCode.K);
+        }
+
+        private bool GetAttackKey()
+        {
+            return Input.GetKey(KeyCode.J);
         }
 
         private void JumpManager()
@@ -154,26 +192,25 @@ namespace Script.Player
                 onGround = false;
                 return;
             }
+
             if (isStartJump)
             {
                 playerData.jumpData.nowForceTime += Time.deltaTime;
                 _rigidbody2D.velocity += Vector2.up;
                 return;
             }
+
             if (isCooldowning)
             {
                 playerData.stateCheck.Jump = true;
                 playerData.jumpData.CdCounter = 0;
                 return;
             }
+
             if (!canJump)
             {
                 playerData.jumpData.CdCounter += Time.deltaTime;
             }
-        }
-
-        private void JumpEnd()
-        {
         }
 
         private bool GetJumptKey()

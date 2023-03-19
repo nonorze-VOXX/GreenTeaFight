@@ -4,6 +4,13 @@ using UnityEngine;
 namespace Script.Player
 {
     [System.Serializable]
+    public struct AttackData
+    {
+        public float Cd;
+        public float CdCounter;
+    }
+
+    [System.Serializable]
     public struct DashData
     {
         public float maxKeepTime;
@@ -56,6 +63,7 @@ namespace Script.Player
         public MoveData moveData;
         public StateCheck stateCheck;
         public JumpData jumpData;
+        public AttackData attackData;
         public DashData dashData;
         public PastPlayerData pastPlayerData;
     }
