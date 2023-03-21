@@ -1,19 +1,38 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 
-public class PastPlayer : MonoBehaviour
+namespace Script.Player
 {
-    public PlayerData data;
-    // Start is called before the first frame update
-    void Start()
+    public class PastPlayer : MonoBehaviour
     {
+        public PlayerData playerData;
+        public GameObject player;
 
-    }
+        private void Start()
+        {
+            Init();
+        }
 
-    // Update is called once per frame
-    void Update()
-    {
+        private void Update()
+        {
+            if (playerData.pastPlayerData.pathTime >= playerData.pastPlayerData.maxPathTime)
+            {
+                transform.position = playerData.pastPlayerData.path.Dequeue();
+            }
+            else
+            {
+                playerData.pastPlayerData.pathTime += Time.deltaTime;
+            }
 
+            playerData.pastPlayerData.path.Enqueue(player.transform.position);
+        }
+
+        private void Init()
+        {
+            playerData.pastPlayerData.path = new Queue<Vector2>();
+            playerData.pastPlayerData.pathTime = 0;
+        }
     }
 }

@@ -1,180 +1,254 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using Script.Player.stateMechine;
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class PlayerManager : MonoBehaviour
+namespace Script.Player
 {
     public enum PlayerState
     {
         Idle = 0,
         Walk = 1,
         Run = 2,
-        Attack = 3,
-        Dash = 4
+        Dash = 3,
+        DashAttack,
+        FallingDownAttack,
+        Attack,
+        Jumping,
+        Falling,
     }
 
-    //public PlayerAttack attack;
-    private Rigidbody2D Rigidbody;
-    private Vector2 UnitDash;
-    public GameObject PastPlayer;
-    private bool _touchGround;
-
-    public PlayerData data;
-
-    //public GameObject attack;
-    public bool attacked;
-
-    public Animator playerAction;
-
-    // Start is called before the first frame update
-    void Start()
+    public class PlayerManager : MonoBehaviour
     {
-        Rigidbody = gameObject.GetComponent<Rigidbody2D>();
-        playerAction = gameObject.GetComponent<Animator>();
-        NewGame();
-        data.pastLocal.Enqueue(new Vector2(
-            transform.position.x,
-            transform.position.y
-        ));
-    }
+        private PlayerState state;
+        public PlayerData playerData;
+        private Rigidbody2D _rigidbody2D;
+        private bool onGround;
+        private Vector2 deltaDash;
+        private Vector2 dashTarget;
+        private Animator animator;
 
-    // Update is called once per frame
-    void Update()
-    {
-        PastPlayerQueueUpdate();
+        public GameObject PastPlayer;
 
-        if (data.canMove)
+        private float nowSpeed;
+
+        private void Start()
         {
-            GetMove();
+            _rigidbody2D = GetComponent<Rigidbody2D>();
+
+            animator = GetComponent<Animator>();
+            //tmp
+            nowSpeed = 10;
+            playerData.dashData.CdCounter = 0;
+            playerData.jumpData.CdCounter = 0;
+            //todo newgame init
         }
 
-        CounterUpdate();
-    }
 
-    private void PastPlayerQueueUpdate()
-    {
-        if (data.queueTime < data.dashBackTime * 2) //- data.dashCd)
+        private void Update()
         {
-            data.queueTime += Time.deltaTime;
-            data.pastLocal.Enqueue(new Vector2(
-                transform.position.x,
-                transform.position.y
-            ));
-        }
-        else
-        {
-            data.pastLocal.Enqueue(new Vector2(
-                transform.position.x,
-                transform.position.y
-            ));
-            PastPlayer.transform.position = data.pastLocal.Dequeue();
-        }
-    }
-
-    private void CounterUpdate()
-    {
-        if (!data.canAttack)
-        {
-            data.attack.stateCdCounter += Time.deltaTime;
-            if (data.attack.stateCdCounter > data.attack.stateCd)
+            switch (state)
             {
-                data.attack.stateCdCounter = 0;
-                data.canAttack = true;
+                case PlayerState.Idle:
+                    AttackTrigger();
+                    DashTrigger();
+                    JumpManager();
+                    _rigidbody2D.velocity = new Vector2(
+                        GetSpeedByRLKey(),
+                        _rigidbody2D.velocity.y
+                    );
+                    if (_rigidbody2D.velocity.x > 0)
+                    {
+                        transform.rotation = Quaternion.Euler(0, 180, 0);
+                    }
+                    else if (_rigidbody2D.velocity.x < 0)
+                    {
+                        transform.rotation = Quaternion.Euler(0, 0, 0);
+                    }
+
+                    break;
+                case PlayerState.Walk:
+                    break;
+                case PlayerState.Run:
+                    break;
+                case PlayerState.Dash:
+                    Dash();
+                    if (playerData.dashData.keepCounter > playerData.dashData.maxKeepTime)
+                    {
+                        state = PlayerState.Idle;
+                        _rigidbody2D.gravityScale = 1;
+                    }
+
+                    break;
+                case PlayerState.DashAttack:
+
+                    break;
+                case PlayerState.FallingDownAttack:
+                    break;
+                case PlayerState.Attack:
+                    state = PlayerState.Idle;
+                    break;
+                case PlayerState.Jumping:
+                    break;
+                case PlayerState.Falling:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
-        if (!data.canDash)
+        private void Dash()
         {
-            data.dash.stateCdCounter += Time.deltaTime;
-            if (data.dash.stateCdCounter > data.dash.stateCd)
+            playerData.dashData.keepCounter += Time.deltaTime;
+            if (playerData.dashData.keepCounter > playerData.dashData.maxKeepTime)
             {
-                data.canDash = true;
+                transform.position = dashTarget;
+            }
+            else
+            {
+                transform.position += (Vector3)(deltaDash * Time.deltaTime);
             }
         }
-    }
 
-
-    private void GetDash()
-    {
-        if (Input.GetKey("k"))
+        private void DashTrigger()
         {
-            data.canDash = false;
-            UnitDash = (data.pastLocal.Dequeue() - (Vector2)transform.position) / data.dashFrameMoveTimes;
-        }
-    }
-
-    private void GetMove()
-    {
-        if (Input.GetKey("d") && Input.GetKey("a"))
-        {
-            Move(0.0f, Rigidbody.velocity.y);
-        }
-        else if (Input.GetKey("d") && transform.position.x < data.xMax)
-        {
-            Move(data.moveSpeed, Rigidbody.velocity.y);
-            transform.rotation = Quaternion.Euler(0, 180, 0);
-        }
-        else if (Input.GetKey("a") && transform.position.x > -data.xMax)
-        {
-            transform.rotation = Quaternion.Euler(0, 0, 0);
-            Move(-data.moveSpeed, Rigidbody.velocity.y);
-        }
-        else
-        {
-            Move(0.0f, Rigidbody.velocity.y);
-        }
-
-        // will do keep a time and  no work
-        if (Input.GetKey("w") && _touchGround)
-        {
-            Move(Rigidbody.velocity.x, data.jumpSpeed);
-            _touchGround = false;
-        }
-    }
-
-    private void Move(Vector2 unitMove)
-    {
-        transform.position = (Vector2)transform.position + unitMove;
-    }
-
-    private void Move(float x, float y)
-    {
-        Rigidbody.velocity = new Vector2(x, y);
-        //
-    }
-
-    public void NewGame()
-    {
-        gameObject.transform.Translate(0.0f, 0.0f, 0.0f);
-        data.pastLocal.Clear();
-        data.queueTime = 0;
-        _touchGround = false;
-        attacked = false;
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        Debug.Log(collision.gameObject.tag);
-        if (attacked == false
-            && collision.gameObject.CompareTag("enemy")
-            && collision.gameObject.transform.rotation == this.transform.rotation)
-        {
-            data.enemyHp -= data.playerDamege;
-            attacked = true;
-            if (data.enemyHp <= 0)
+            if (GetDashKey() && playerData.stateCheck.Dash)
             {
+                dashTarget = PastPlayer.transform.position;
+                deltaDash = (dashTarget - (Vector2)transform.position) / playerData.dashData.maxKeepTime;
+                state = PlayerState.Dash;
+                playerData.stateCheck.Dash = false;
+                _rigidbody2D.gravityScale = 0;
+                _rigidbody2D.velocity = Vector2.zero;
+            }
+            else
+            {
+                if (playerData.dashData.CdCounter > playerData.dashData.Cd)
+                {
+                    playerData.dashData.keepCounter = 0;
+                    playerData.dashData.CdCounter = 0;
+                    playerData.stateCheck.Dash = true;
+                }
+
+                if (!playerData.stateCheck.Dash)
+                {
+                    playerData.dashData.CdCounter += Time.deltaTime;
+                }
             }
         }
-    }
 
-    public void OnCollisionStay2D(Collision2D collision)
-    {
-        if (collision.gameObject.tag == "ground")
+        void AttackTrigger()
         {
-            _touchGround = true;
+            if (GetAttackKey() && playerData.stateCheck.Attack)
+            {
+                animator.SetInteger("State", 1);
+                state = PlayerState.Attack;
+                playerData.stateCheck.Attack = false;
+            }
+            else
+            {
+                if (playerData.attackData.CdCounter > playerData.attackData.Cd)
+                {
+                    playerData.stateCheck.Attack = true;
+                }
+
+                if (!playerData.stateCheck.Attack)
+                {
+                    playerData.attackData.CdCounter += Time.deltaTime;
+                }
+            }
+        }
+
+        private bool GetDashKey()
+        {
+            return Input.GetKey(KeyCode.K);
+        }
+
+        private bool GetAttackKey()
+        {
+            return Input.GetKey(KeyCode.J);
+        }
+
+        private void JumpManager()
+        {
+            var jumpData = playerData.jumpData;
+
+            var canJump = playerData.stateCheck.Jump;
+            var isPressJump = GetJumptKey();
+            var isForceTimeOverflow = jumpData.nowForceTime > jumpData.maxForceTime;
+            var isJumping = jumpData.nowForceTime != 0;
+            var isColddown = jumpData.CdCounter > jumpData.Cd;
+
+            var isJumpingTimeOverflow = canJump && isPressJump && onGround && isForceTimeOverflow;
+            var isStartJump = canJump && isPressJump && onGround;
+            var isCancel = canJump && !isPressJump && isJumping;
+            var isCooldowning = !canJump && isColddown;
+            var isColddowned = canJump && isColddown;
+
+            if (isJumpingTimeOverflow || isCancel)
+            {
+                // Jump End
+                playerData.jumpData.nowForceTime = 0;
+                playerData.stateCheck.Jump = false;
+                onGround = false;
+                return;
+            }
+
+            if (isStartJump)
+            {
+                playerData.jumpData.nowForceTime += Time.deltaTime;
+                _rigidbody2D.velocity += Vector2.up;
+                return;
+            }
+
+            if (isCooldowning)
+            {
+                playerData.stateCheck.Jump = true;
+                playerData.jumpData.CdCounter = 0;
+                return;
+            }
+
+            if (!canJump)
+            {
+                playerData.jumpData.CdCounter += Time.deltaTime;
+            }
+        }
+
+        private bool GetJumptKey()
+        {
+            return Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.W);
+        }
+
+        private float GetSpeedByRLKey()
+        {
+            if (GetRightKey() && GetLeftKey())
+            {
+                return 0;
+            }
+            else if (GetRightKey())
+            {
+                return nowSpeed;
+            }
+            else if (GetLeftKey())
+            {
+                return -nowSpeed;
+            }
+
+            return 0;
+        }
+
+        private bool GetLeftKey()
+        {
+            return Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow);
+        }
+
+        private bool GetRightKey()
+        {
+            return Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
+        }
+
+        private void OnCollisionEnter2D(Collision2D other)
+        {
+            onGround = other.transform.CompareTag("ground") || onGround;
         }
     }
 }
